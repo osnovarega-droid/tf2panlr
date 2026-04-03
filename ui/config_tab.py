@@ -33,7 +33,7 @@ class ConfigTab(customtkinter.CTkTabview):
             command=lambda: self.set_path(
                 "CS2Path",
                 "CS2",
-                "C:/Program Files (x86)/Steam/steamapps/common/Counter-Strike Global Offensive",
+                "C:/Program Files (x86)/Steam/steamapps/common/Team Fortress 2",
             ),
         )
         b1.grid(row=0, column=0, padx=20, pady=10)
@@ -119,7 +119,7 @@ class ConfigTab(customtkinter.CTkTabview):
             print(f"Loaded SteamPath: {steam_path}")
 
         cs2_path = self._settingsManager.get(
-            "CS2Path", "C:/Program Files (x86)/Steam/steamapps/common/Counter-Strike Global Offensive"
+            "CS2Path", "C:/Program Files (x86)/Steam/steamapps/common/Team Fortress 2"
         )
         if cs2_path:
             print(f"Loaded CS2Path: {cs2_path}")
