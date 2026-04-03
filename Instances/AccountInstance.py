@@ -334,7 +334,7 @@ def _close_all_tf_singleton_mutexes(primary_pid: int | None = None) -> bool:
             pids.append(proc_pid)
 
     closed_any = False
-    for cs2_pid in pids:
+    for tf_pid in pids:
         try:
             if _close_tf_singleton_mutex(tf_pid):
                 closed_any = True
@@ -922,10 +922,10 @@ class Account:
 
     def _kill_tf_mutex(self, pid: int) -> None:
         try:
-            # cs2ch.exe закрывал mutex не у одного PID, а у всех cs2.exe.
-            # Повторяем это поведение и делаем несколько попыток на старте.
+            # Закрываем только launch-мьютекс текущего TF-процесса.
+            # Не трогаем другие процессы/аккаунты, чтобы уже запущенные окна не ломались.
             for _ in range(6):
-                if _close_all_tf_singleton_mutexes(pid):
+                if _close_tf_singleton_mutex(pid):
                     return
                 time.sleep(0.4)
         except ApplicationException as exc:
