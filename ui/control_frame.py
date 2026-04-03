@@ -27,7 +27,7 @@ class ControlFrame(customtkinter.CTkFrame):
         self.grid(row=1, column=3, padx=(20, 20), pady=(20, 0), sticky="nsew")
 
         data = [
-            ("Move all CS windows", None, self.move_all_cs_windows),
+            ("Move all TF windows", None, self.move_all_cs_windows),
             ("Kill ALL CS & Steam processes", "red", self.kill_all_cs_and_steam),
             ("Launch BES", "darkgreen", self.launch_bes),
             ("Launch SRT", "darkgreen", self.launch_srt),
@@ -67,14 +67,14 @@ class ControlFrame(customtkinter.CTkFrame):
         pids = set()
         for proc in psutil.process_iter(["pid", "name"]):
             try:
-                if (proc.info.get("name") or "").lower() == "cs2.exe":
+                if (proc.info.get("name") or "").lower() == "tf.exe":
                     pids.add(proc.info["pid"])
             except Exception:
                 pass
         return pids
 
     def move_all_cs_windows(self):
-        print("🔀 Расстановка окон CS2 по порядку аккаунтов...")
+        print("🔀 Расстановка окон TF2 по порядку аккаунтов...")
 
         try:
             ctypes.windll.user32.SetProcessDPIAware()
@@ -102,7 +102,7 @@ class ControlFrame(customtkinter.CTkFrame):
 
         active_cs2_pids = self._get_active_cs2_pids()
         if not active_cs2_pids:
-            print("❌ Активные cs2.exe процессы не найдены")
+            print("❌ Активные tf.exe процессы не найдены")
             return
 
         # 3) Ищем окна только для активных cs2 pid
@@ -152,11 +152,13 @@ class ControlFrame(customtkinter.CTkFrame):
             print("❌ Не найдено подходящих окон CS2 для расстановки")
             return
 
-        # 5) Ставим в линию 1-2-3-4... по списку аккаунтов
+        # 5) Ставим окна в сетку 2x5: 1..5 в первой строке, 6..10 во второй
         placed = 0
         for idx, (login, pid, hwnd) in enumerate(ordered_windows):
-            x = idx * (window_width + spacing)
-            y = 0
+            col = idx % 5
+            row = idx // 5
+            x = col * (window_width + spacing)
+            y = row * (window_height + spacing)
             try:
                 win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
                 win32gui.MoveWindow(hwnd, x, y, window_width, window_height, True)
