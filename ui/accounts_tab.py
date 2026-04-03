@@ -257,9 +257,9 @@ class AccountsControl(customtkinter.CTkTabview):
             "SteamPath", r"C:\Program Files (x86)\Steam\steam.exe"
         )
         cs2_path = self._settingsManager.get(
-            "CS2Path", r"C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive"
+            "CS2Path", r"C:\Program Files (x86)\Steam\steamapps\common\Team Fortress 2"
         )
-        cs2_exe_path = os.path.join(cs2_path, r"game\bin\win64\cs2.exe")
+        cs2_exe_path = os.path.join(cs2_path, "tf.exe")
 
         if not os.path.isfile(steam_path) or not steam_path.lower().endswith(".exe"):
             self._logManager.add_log(f"❌ Некорректный SteamPath: {steam_path}")
@@ -267,7 +267,7 @@ class AccountsControl(customtkinter.CTkTabview):
             return
 
         if not os.path.isfile(cs2_exe_path):
-            self._logManager.add_log(f"❌ Не найден CS2 exe: {cs2_exe_path}")
+            self._logManager.add_log(f"❌ Не найден TF exe: {cs2_exe_path}")
             self._finish_start_sequence()
             return
 
