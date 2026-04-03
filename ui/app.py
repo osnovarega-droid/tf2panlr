@@ -1586,7 +1586,7 @@ class App(customtkinter.CTk):
         paths_card.grid(row=0, column=1, padx=(4, 8), pady=8, sticky="nsew")
         paths_card.grid_columnconfigure(0, weight=1)
 
-        customtkinter.CTkLabel(paths_card, text="Steam / CS2 paths", text_color=TXT_MAIN, font=customtkinter.CTkFont(size=15, weight="bold")).grid(row=0, column=0, padx=10, pady=(8, 2), sticky="w")
+        customtkinter.CTkLabel(paths_card, text="Steam / TF2 paths", text_color=TXT_MAIN, font=customtkinter.CTkFont(size=15, weight="bold")).grid(row=0, column=0, padx=10, pady=(8, 2), sticky="w")
 
         self.path_status = {}
         self.path_entries = {}
@@ -1601,10 +1601,10 @@ class App(customtkinter.CTk):
         self._create_path_input(
             paths_card,
             row=2,
-            label="CS2 path",
+            label="TF2 path",
             key="CS2Path",
-            placeholder="C:/Program Files (x86)/Steam/steamapps/common/Counter-Strike Global Offensive",
-            validator=lambda value: (Path(value) / "game" / "bin" / "win64" / "cs2.exe").is_file(),
+            placeholder="C:/Program Files (x86)/Steam/steamapps/common/Team Fortress 2",
+            validator=lambda value: (Path(value) / "tf.exe").is_file(),
         )
         telegram_block = customtkinter.CTkFrame(paths_card, fg_color=BG_CARD, corner_radius=8, border_width=1, border_color=BG_BORDER)
         telegram_block.grid(row=3, column=0, padx=8, pady=5, sticky="ew")
