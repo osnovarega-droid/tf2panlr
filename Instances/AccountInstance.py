@@ -272,7 +272,7 @@ def _parse_handle_values(output: str, name_filter: str, type_filter: str) -> lis
                         break
     return handles
 
-def _close_cs2_singleton_mutex(pid: int) -> bool:
+def _close_tf_singleton_mutex(pid: int) -> bool:
     """
     Закрытие Хэндла у мьютекса тем самым давая возможность запустить второй CS2.
     Возвращает True если успешно закрыл хэндл.
@@ -283,15 +283,15 @@ def _close_cs2_singleton_mutex(pid: int) -> bool:
     try:
         # Ищем мьютекс через handle.exe для конкретного процесса.
         search_variants = [
-            f"-accepteula -nobanner -a -p {pid} csgo_singleton_mutex",
-            f"-accepteula -a -p {pid} csgo_singleton_mutex",
-            f"-accepteula -p {pid} -a csgo_singleton_mutex",
+            f"-accepteula -nobanner -a -p {pid} hl2_singleton_mutex",
+            f"-accepteula -a -p {pid} hl2_singleton_mutex",
+            f"-accepteula -p {pid} -a hl2_singleton_mutex",
         ]
 
         handles: list[str] = []
         for args in search_variants:
             search_output = _run_handle_process(args)
-            handles = _parse_handle_values(search_output, "csgo_singleton_mutex", "Mutant")
+            handles = _parse_handle_values(search_output, "hl2_singleton_mutex", "Mutant")
             if handles:
                 break
 
@@ -314,7 +314,7 @@ def _close_cs2_singleton_mutex(pid: int) -> bool:
         raise ApplicationException(f"{exc} Возможно включен антивирус") from exc
 
 
-def _close_all_cs2_singleton_mutexes(primary_pid: int | None = None) -> bool:
+def _close_all_tf_singleton_mutexes(primary_pid: int | None = None) -> bool:
     """
     Аналог CloseAllMutexes из cs2ch.exe:
     проходит по всем запущенным cs2.exe и закрывает csgo_singleton_mutex.
@@ -330,13 +330,13 @@ def _close_all_cs2_singleton_mutexes(primary_pid: int | None = None) -> bool:
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess, ValueError, TypeError):
             continue
 
-        if name == 'cs2.exe' and proc_pid > 0 and proc_pid not in pids:
+        if name == 'tf.exe' and proc_pid > 0 and proc_pid not in pids:
             pids.append(proc_pid)
 
     closed_any = False
     for cs2_pid in pids:
         try:
-            if _close_cs2_singleton_mutex(cs2_pid):
+            if _close_tf_singleton_mutex(tf_pid):
                 closed_any = True
         except ApplicationException:
             continue
@@ -396,7 +396,7 @@ def find_latest_file(filename: str) -> str | None:
 
     cs2_path = settings.get(
         "CS2Path",
-        "C:/Program Files (x86)/Steam/steamapps/common/Counter-Strike Global Offensive",
+        "C:/Program Files (x86)/Steam/steamapps/common/Team Fortress 2",
     )
     search_roots = [
         Path(cs2_path),
@@ -455,7 +455,7 @@ class Account:
                     if psutil.pid_exists(steam_pid) and psutil.pid_exists(cs2_pid):
                         steam_proc = psutil.Process(steam_pid)
                         cs2_proc = psutil.Process(cs2_pid)
-                        if cs2_proc.name().lower() == "cs2.exe" and cs2_proc.ppid() == steam_proc.pid:
+                        if cs2_proc.name().lower() == "tf.exe" and cs2_proc.ppid() == steam_proc.pid:
                             self.steamProcess = steam_proc
                             self.CS2Process = cs2_proc
                             self.setColor("green")
@@ -521,7 +521,7 @@ class Account:
             if psutil.pid_exists(self.steamProcess.pid) and psutil.pid_exists(self.CS2Process.pid):
                 steam_proc = psutil.Process(self.steamProcess.pid)
                 cs2_proc = psutil.Process(self.CS2Process.pid)
-                if cs2_proc.name().lower() == "cs2.exe" and cs2_proc.ppid() == steam_proc.pid:
+                if cs2_proc.name().lower() == "tf.exe" and cs2_proc.ppid() == steam_proc.pid:
                     return True
         except (psutil.NoSuchProcess, psutil.AccessDenied, ProcessLookupError):
             return False
@@ -733,7 +733,7 @@ class Account:
         steam_path = self._settingsManager.get("SteamPath", r"C:\Program Files (x86)\Steam\steam.exe")
         cs2_path = self._settingsManager.get(
             "CS2Path",
-            "C:/Program Files (x86)/Steam/steamapps/common/Counter-Strike Global Offensive"
+            "C:/Program Files (x86)/Steam/steamapps/common/Team Fortress 2"
         )
 
         # Удаление фона
@@ -765,7 +765,7 @@ class Account:
 
             args = (
                 f'{self._settingsManager.get("SteamArg", "-nofriendsui -vgui -noreactlogin")}'
-                f' -applaunch 730 '
+                f' -applaunch 440 '
                 f'-con_logfile {self.login}.log '
                 f'{self._settingsManager.get("CS2Arg", "")}'
             )
@@ -787,13 +787,13 @@ class Account:
 
             cs2_found = False
             for proc in psutil.process_iter(['pid', 'name', 'ppid']):
-                if proc.info['name'] and proc.info['name'].lower() == 'cs2.exe':
+                if proc.info['name'] and proc.info['name'].lower() == 'tf.exe':
                     try:
                         parent = psutil.Process(proc.info['ppid'])
                         if parent.pid == self.steamProcess.pid:
                             self.CS2Process = proc
                             cs2_found = True
-                            self._kill_cs2_mutex(proc.pid)
+                            self._kill_tf_mutex(proc.pid)
                             
                             # 🔥 ПЕРЕИМЕНОВАНИЕ ОКНА СРАЗУ ПОСЛЕ НАХОЖДЕНИЯ PID!
                             csWindow = self.FindCSWindow()
@@ -920,12 +920,12 @@ class Account:
         
         print(f"✅ Мониторинг Steam [{self.login}] завершен")
 
-    def _kill_cs2_mutex(self, pid: int) -> None:
+    def _kill_tf_mutex(self, pid: int) -> None:
         try:
             # cs2ch.exe закрывал mutex не у одного PID, а у всех cs2.exe.
             # Повторяем это поведение и делаем несколько попыток на старте.
             for _ in range(6):
-                if _close_all_cs2_singleton_mutexes(pid):
+                if _close_all_tf_singleton_mutexes(pid):
                     return
                 time.sleep(0.4)
         except ApplicationException as exc:
@@ -957,7 +957,7 @@ class Account:
         
         args = (
             f'{self._settingsManager.get("SteamArg", "-nofriendsui -vgui -noreactlogin")}'
-            f' -applaunch 730 '
+            f' -applaunch 440 '
             f'-con_logfile {self.login}.log '
             f'{self._settingsManager.get("CS2Arg", "")}'
         )
@@ -1230,7 +1230,7 @@ class Account:
                         
                         # 🔥 МАКСИМАЛЬНАЯ ЗАЩИТА CS2:
                         if ("counter-strike 2" in normalized_title or 
-                            "cs2.exe" in normalized_title or 
+                            "tf.exe" in normalized_title or 
                             self.login.lower() in normalized_title or
                             "[FREE]" in window_title):
                             print(f"🛡️ CS2 окно защищено: {window_title[:50]}...")
